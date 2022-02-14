@@ -1,0 +1,53 @@
+version: v4
+base: docker-registry.wikimedia.org/openjdk-8-jdk
+
+lives:
+  in: /datahub/datahub-gms
+
+variants:
+  build:
+    lives:
+      in: /datahub/src
+    builder:
+      command: ['./gradlew', ':metadata-service:war:build']
+      requirements:
+       - from: local
+         source: .
+         destination: .
+  prepare:
+    copies:
+     - from: build
+       source: /datahub/src/metadata-service/war/build/libs/war.war
+       destination: /datahub/datahub-gms/bin/war.war
+     - from: build
+       source: /datahub/src/docker/datahub-gms/start.sh
+       destination: /datahub/datahub-gms/start.sh
+     - from: build
+       source: /datahub/src/docker/datahub-gms/jetty.xml
+       destination: /datahub/datahub-gms/scripts/jetty.xml
+     - from: build
+       source: /datahub/src/metadata-models/src/main/resources/entity-registry.yml
+       destination: /datahub/datahub-gms/resources/entity-registry.yml
+     - from: build
+       source: /datahub/src/docker/monitoring/client-prometheus-config.yaml
+       destination: /datahub/datahub-gms/scripts/prometheus-config.yaml
+    apt: { packages: [curl] }
+    builder:
+      command: ['/bin/bash', '/datahub/datahub-gms/setup_gms.sh']
+      requirements:
+       - from: build
+         source: /datahub/src/docker/datahub-gms/setup_gms.sh
+         destination: /datahub/datahub-gms/setup_gms.sh
+
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates ]
+    copies:
+     - from: prepare
+       source: /datahub/datahub-gms
+       destination: /datahub/datahub-gms
+    entrypoint: ['/datahub/datahub-gms/start.sh']

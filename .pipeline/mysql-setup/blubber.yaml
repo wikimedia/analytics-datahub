@@ -1,0 +1,35 @@
+version: v4
+base: docker-registry.wikimedia.org/bullseye
+lives:
+  in: /datahub
+runs:
+  environment:
+    DATAHUB_DB_NAME: datahub
+
+variants:
+  build:
+    apt: { packages: [ mariadb-client, curl, ca-certificates ] }
+    builder:
+      command: ['/bin/bash', '/datahub/setup_mysql_setup.sh']
+      requirements:
+      - from: local
+        source: ./docker/mysql-setup/init.sql
+        destination: ./init.sql
+      - from: local
+        source: ./docker/mysql-setup/init.sh
+        destination: ./init.sh
+      - from: local
+        source: ./docker/mysql-setup/setup_mysql_setup.sh
+        destination: ./setup_mysql_setup.sh
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates, mariadb-client ]
+    copies:
+    - from: build
+      source: /datahub
+      destination: /datahub
+    entrypoint: [ '/datahub/init.sh' ]

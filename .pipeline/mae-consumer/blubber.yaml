@@ -1,0 +1,47 @@
+version: v4
+base: docker-registry.wikimedia.org/openjdk-8-jdk
+
+lives:
+  in: /datahub/datahub-mae-consumer
+
+variants:
+  build:
+    lives:
+      in: /datahub/src
+    builder:
+      command: ['./gradlew', ':metadata-jobs:mae-consumer-job:build']
+      requirements:
+       - from: local
+         source: .
+         destination: .
+  prepare:
+    copies:
+     - from: build
+       source: /datahub/src/metadata-jobs/mae-consumer-job/build/libs/mae-consumer-job.jar
+       destination: /datahub/datahub-mae-consumer/mae-consumer-job.jar
+     - from: build
+       source: /datahub/src/metadata-models/src/main/resources/entity-registry.yml
+       destination: /datahub/datahub-mae-consumer/resources/entity-registry.yml
+    apt: { packages: [curl] }
+    builder:
+      command: ['/bin/bash', '/datahub/datahub-mae-consumer/setup_mae_consumer.sh']
+      requirements:
+      - from: build
+        source: /datahub/src/docker/datahub-mae-consumer/setup_mae_consumer.sh
+        destination: /datahub/datahub-mae-consumer/setup_mae_consumer.sh
+      - from: build
+        source: /datahub/src/docker/datahub-mae-consumer/start.sh
+        destination: /datahub/datahub-mae-consumer/scripts/start.sh
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates ]
+    copies:
+     - from: prepare
+       source: /datahub/datahub-mae-consumer
+       destination: /datahub/datahub-mae-consumer
+    entrypoint: ['/datahub/datahub-mae-consumer/scripts/start.sh']
+

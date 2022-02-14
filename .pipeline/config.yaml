@@ -1,0 +1,106 @@
+pipelines:
+  gms-build:
+    blubberfile: gms/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  gms-publish:
+    blubberfile: gms/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-gms
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  frontend-build:
+    blubberfile: frontend/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  frontend-publish:
+    blubberfile: frontend/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-frontend
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  mce-consumer-build:
+    blubberfile: mce-consumer/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  mce-consumer-publish:
+    blubberfile: mce-consumer/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-mce-consumer
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  mae-consumer-build:
+    blubberfile: mae-consumer/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  mae-consumer-publish:
+    blubberfile: mae-consumer/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-mae-consumer
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  mysql-setup-build:
+    blubberfile: mysql-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  mysql-setup-publish:
+    blubberfile: mysql-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-mysql-setup
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  elasticsearch-setup-build:
+    blubberfile: elasticsearch-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  elasticsearch-setup-publish:
+    blubberfile: elasticsearch-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-elasticsearch-setup
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
+  kafka-setup-build:
+    blubberfile: kafka-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  kafka-setup-publish:
+    blubberfile: kafka-setup/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-kafka-setup
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
