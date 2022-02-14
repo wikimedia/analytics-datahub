@@ -43,4 +43,4 @@ if [[ ${ENABLE_PROMETHEUS:-false} == true ]]; then
 fi
 
 export JAVA_TOOL_OPTIONS
-exec dockerize "${dockerize_args[@]}" java -jar /datahub/datahub-mae-consumer/bin/mae-consumer-job.jar
+exec ./dockerize "${dockerize_args[@]}" java -jar /datahub/datahub-mae-consumer/bin/mae-consumer-job.jar

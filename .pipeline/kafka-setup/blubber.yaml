@@ -1,0 +1,45 @@
+version: v4
+base: docker-registry.wikimedia.org/openjdk-8-jdk
+lives:
+  in: /datahub
+runs:
+  environment:
+    METADATA_AUDIT_EVENT_NAME: MetadataAuditEvent_v4
+    METADATA_CHANGE_EVENT_NAME: MetadataChangeEvent_v4
+    FAILED_METADATA_CHANGE_EVENT_NAME: FailedMetadataChangeEvent_v4
+    DATAHUB_USAGE_EVENT_NAME: DataHubUsageEvent_v1
+    METADATA_CHANGE_LOG_VERSIONED_TOPIC: MetadataChangeLog_Versioned_v1
+    METADATA_CHANGE_LOG_TIMESERIES_TOPIC: MetadataChangeLog_Timeseries_v1
+    METADATA_CHANGE_PROPOSAL_TOPIC: MetadataChangeProposal_v1
+    FAILED_METADATA_CHANGE_PROPOSAL_TOPIC: FailedMetadataChangeProposal_v1
+    PLATFORM_EVENT_TOPIC_NAME: PlatformEvent_v1
+
+variants:
+  build:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [thirdparty/confluent]
+      packages: [ ca-certificates, confluent-kafka-2.11, curl ]
+    builder:
+      command: ['/bin/bash', '/datahub/setup_kafka_setup.sh']
+      requirements:
+      - from: local
+        source: ./docker/kafka-setup/kafka-setup.sh
+        destination: ./kafka-setup.sh
+      - from: local
+        source: ./docker/kafka-setup/setup_kafka_setup.sh
+        destination: ./setup_kafka_setup.sh
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [ main ]
+      packages: [ wmf-certificates ]
+    copies:
+    - from: build
+      source: /datahub
+      destination: /datahub
+    entrypoint: [ '/datahub/kafka-setup.sh']

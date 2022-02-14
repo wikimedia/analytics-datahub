@@ -1,0 +1,32 @@
+version: v4
+base: docker-registry.wikimedia.org/bullseye
+lives:
+  in: /datahub
+
+variants:
+  build:
+    apt: { packages: [ ca-certificates, curl, jq ] }
+    builder:
+      command: ['/bin/bash', '/datahub/setup_elasticsearch_setup.sh']
+      requirements:
+      - from: local
+        source: ./docker/elasticsearch-setup/create-indices.sh
+        destination: ./create-indices.sh
+      - from: local
+        source: metadata-service/restli-servlet-impl/src/main/resources/index
+        destination: ./index
+      - from: local
+        source: ./docker/elasticsearch-setup/setup_elasticsearch_setup.sh
+        destination: ./setup_elasticsearch_setup.sh
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates, curl, jq ]
+    copies:
+    - from: build
+      source: /datahub
+      destination: /datahub
+    entrypoint: [ '/datahub/create-indices.sh' ]
