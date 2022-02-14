@@ -1,0 +1,40 @@
+version: v4
+base: docker-registry.wikimedia.org/openjdk-8-jdk
+
+lives:
+  in: /datahub/datahub-frontend
+
+variants:
+  build:
+    lives:
+      in: /datahub/src
+    apt: { packages: [python3] }
+    builder:
+      command: ['./gradlew', ':datahub-frontend:dist', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
+      requirements:
+       - from: local
+         source: .
+         destination: .
+  prepare:
+    apt: { packages: [unzip] }
+    lives:
+      in: /datahub
+    builder:
+      command: ['unzip', 'datahub-frontend.zip']
+      requirements:
+      - from: build
+        source: /datahub/src/datahub-frontend/build/distributions/datahub-frontend.zip
+        destination: /datahub/datahub-frontend.zip
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates ]
+    copies:
+     - from: prepare
+       source: /datahub/datahub-frontend
+       destination: /datahub/datahub-frontend
+    entrypoint: ['/datahub/datahub-frontend/bin/playBinary']
+

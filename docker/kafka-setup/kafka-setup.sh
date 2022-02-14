@@ -8,6 +8,7 @@ if [[ $DATAHUB_PRECREATE_TOPICS == "false" ]]; then
 fi
 
 . kafka-config.sh
+/datahub/dockerize -wait tcp://$KAFKA_BOOTSTRAP_SERVER -timeout 240s
 
 echo "bootstrap.servers=$KAFKA_BOOTSTRAP_SERVER" > $CONNECTION_PROPERTIES_PATH
 echo "security.protocol=$KAFKA_PROPERTIES_SECURITY_PROTOCOL" >> $CONNECTION_PROPERTIES_PATH
