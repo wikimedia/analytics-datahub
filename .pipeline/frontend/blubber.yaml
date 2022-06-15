@@ -36,5 +36,5 @@ variants:
      - from: prepare
        source: /datahub/datahub-frontend
        destination: /datahub/datahub-frontend
-    entrypoint: ['/datahub/datahub-frontend/bin/playBinary']
+    entrypoint: ['/datahub/datahub-frontend/bin/datahub-frontend']
 
