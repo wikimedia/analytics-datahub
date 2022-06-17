@@ -5,16 +5,26 @@ lives:
   in: /datahub/datahub-frontend
 
 variants:
-  build:
+  build-react:
+    lives:
+      in: /datahub/src
+    apt: { packages: [python3] }
+    builder:
+      command: ['./gradlew', ':datahub-web-react:build', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
+      requirements:
+       - from: local
+         source: .
+         destination: .
+  build-frontend:
     lives:
       in: /datahub/src
     apt: { packages: [python3] }
     builder:
       command: ['./gradlew', ':datahub-frontend:dist', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
       requirements:
-       - from: local
-         source: .
-         destination: .
+       - from: build-react
+         source: /datahub/src/
+         destination: /datahub/src/
   prepare:
     apt: { packages: [unzip] }
     lives:
@@ -22,7 +32,7 @@ variants:
     builder:
       command: ['unzip', 'datahub-frontend.zip']
       requirements:
-      - from: build
+      - from: build-frontend
         source: /datahub/src/datahub-frontend/build/distributions/datahub-frontend.zip
         destination: /datahub/datahub-frontend.zip
   production:
