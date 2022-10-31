@@ -1,5 +1,6 @@
+# syntax=docker-registry.wikimedia.org/repos/releng/blubber:v0.12.1
 version: v4
-base: docker-registry.wikimedia.org/openjdk-8-jdk
+base: docker-registry.wikimedia.org/openjdk-11-jdk
 
 lives:
   in: /datahub/datahub-frontend
@@ -10,17 +11,17 @@ variants:
       in: /datahub/src
     apt: { packages: [python3] }
     builder:
-      command: ['./gradlew', ':datahub-web-react:build', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
+      command: ['./gradlew', ':datahub-web-react:build', '-PuseSystemNode=false', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
       requirements:
-       - from: local
-         source: .
-         destination: .
+        - from: local
+          source: .
+          destination: .
   build-frontend:
     lives:
       in: /datahub/src
     apt: { packages: [python3] }
     builder:
-      command: ['./gradlew', ':datahub-frontend:dist', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
+      command: ['./gradlew', ':datahub-frontend:dist', '-PuseSystemNode=false', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
       requirements:
        - from: build-react
          source: /datahub/src/
