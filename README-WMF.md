@@ -11,3 +11,5 @@ See this page for more details about the Upgrade process: https://wikitech.wikim
 * Released version 0.9.0
 
 * Rebuilt version 0.9.0 on JDK version 11.0.16
+
+* Released version 0.10.0
