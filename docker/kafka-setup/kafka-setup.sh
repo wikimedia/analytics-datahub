@@ -6,7 +6,7 @@ if [[ $DATAHUB_PRECREATE_TOPICS == "false" ]]; then
   echo "Pre-creation of topics has been turned off, exiting"
   exit 0
 fi
-
+# Environment variables now defined in kafka-config.sh
 . kafka-config.sh
 
 /datahub/dockerize -wait tcp://$KAFKA_BOOTSTRAP_SERVER -timeout 240s
@@ -53,7 +53,7 @@ fi
 
 cub kafka-ready -c $CONNECTION_PROPERTIES_PATH -b $KAFKA_BOOTSTRAP_SERVER 1 180
 
-
+#Updated topic creatiob logic
 ############################################################
 # Start Topic Creation Logic
 ############################################################
