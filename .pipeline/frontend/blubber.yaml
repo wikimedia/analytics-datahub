@@ -1,4 +1,4 @@
-# syntax=docker-registry.wikimedia.org/repos/releng/blubber:v0.12.1
+# syntax=docker-registry.wikimedia.org/repos/releng/blubber:v0.17.0
 version: v4
 base: docker-registry.wikimedia.org/openjdk-11-jdk
 
@@ -26,6 +26,8 @@ variants:
        - from: build-react
          source: /datahub/src/
          destination: /datahub/src/
+  build:
+    includes: [ 'build-frontend' ]
   prepare:
     apt: { packages: [unzip] }
     lives:
@@ -34,7 +36,7 @@ variants:
       command: ['unzip', 'datahub-frontend.zip']
       requirements:
       - from: build-frontend
-        source: /datahub/src/datahub-frontend/build/distributions/datahub-frontend.zip
+        source: /datahub/src/datahub-frontend/build/distributions/datahub-frontend-*.zip
         destination: /datahub/datahub-frontend.zip
   production:
     apt:

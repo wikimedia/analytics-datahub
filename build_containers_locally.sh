@@ -8,25 +8,29 @@
 # new build process. This makes the build process longer each time, but
 # reduces the chance of a cache invalidation error.
 #
+
+set -xe
+export DOCKER_BUILDKIT=1
+
 echo '#### Cleaning build cache ####'
 docker builder prune -f
 
 for c in gms frontend mce-consumer mae-consumer
 do
   echo "#### Working on $c ####"
-  for i in build test prepare production
+  for i in build prepare production
   do
     echo "#### Removing containters for $c-$i ####"
     for d in $(docker ps -aq --filter="ancestor=datahub-$c-$i")
     do
-      docker rm -f $d
+      docker rm -f $d || /usr/bin/true
     done
 
     if docker image ls -q datahub-$c-$d; then
       echo "#### Removing container image for $c-$i ####"
-      docker rmi datahub-$c-$i
+      docker rmi datahub-$c-$i || /usr/bin/true
     fi
     echo "#### Building container image for $c-$i ####"
-    blubber .pipeline/datahub-$c/blubber.yaml build | docker build -t datahub-$c-$i -f - .
+    docker build -t datahub-$c-$i -f .pipeline/$c/blubber.yaml --target $i .
   done
 done
