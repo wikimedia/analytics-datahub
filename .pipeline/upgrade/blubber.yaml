@@ -1,0 +1,38 @@
+# syntax=docker-registry.wikimedia.org/repos/releng/blubber:v0.17.0
+version: v4
+base: docker-registry.wikimedia.org/openjdk-11-jdk
+
+lives:
+  in: /datahub/datahub-upgrade
+
+variants:
+  build:
+    lives:
+      in: /datahub/src
+    apt: { packages: [python3] }
+    builder:
+      command: ['./gradlew', ':datahub-upgrade:build', '-PuseSystemNode=false', '-x', 'test', '--parallel']
+      requirements:
+        - from: local
+          source: .
+          destination: .
+  prepare:
+    lives:
+      in: /datahub
+    copies:
+      - from: build
+        source: /datahub/src/datahub-upgrade/build/libs/datahub-upgrade.jar
+        destination: /datahub/datahub-upgrade/bin/datahub-upgrade.jar
+  production:
+    apt:
+      sources:
+        - url: http://apt.wikimedia.org/wikimedia
+          distribution: buster-wikimedia
+          components: [main]
+      packages: [ wmf-certificates ]
+    copies:
+     - from: prepare
+       source: /datahub/datahub-upgrade
+       destination: /datahub/datahub-upgrade
+    entrypoint: ['java', '-jar', '/datahub/datahub-upgrade/bin/datahub-upgrade.jar']
+

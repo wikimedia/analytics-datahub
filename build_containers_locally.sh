@@ -15,7 +15,7 @@ export DOCKER_BUILDKIT=1
 echo '#### Cleaning build cache ####'
 docker builder prune -f
 
-for c in gms frontend mce-consumer mae-consumer
+for c in gms frontend mce-consumer mae-consumer upgrade
 do
   echo "#### Working on $c ####"
   for i in build prepare production

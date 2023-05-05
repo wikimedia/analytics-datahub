@@ -59,6 +59,21 @@ pipelines:
             name: datahub-mae-consumer
             tag: ${setup.commit}-${.stage}
             tags: [latest]
+  upgrade-build:
+    blubberfile: upgrade/blubber.yaml
+    stages:
+      - name: production
+        build: production
+  upgrade-publish:
+    blubberfile: upgrade/blubber.yaml
+    stages:
+      - name: production
+        build: production
+        publish:
+          image:
+            name: datahub-upgrade
+            tag: ${setup.commit}-${.stage}
+            tags: [latest]
   mysql-setup-build:
     blubberfile: mysql-setup/blubber.yaml
     stages:
