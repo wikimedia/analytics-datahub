@@ -21,6 +21,9 @@ variants:
       in: /datahub
     copies:
       - from: build
+        source: /datahub/src/metadata-models/src/main/resources/entity-registry.yml
+        destination: /datahub/datahub-gms/resources/entity-registry.yml
+      - from: build
         source: /datahub/src/datahub-upgrade/build/libs/datahub-upgrade.jar
         destination: /datahub/datahub-upgrade/bin/datahub-upgrade.jar
   production:
@@ -31,6 +34,9 @@ variants:
           components: [main]
       packages: [ wmf-certificates ]
     copies:
+     - from: prepare
+       source: /datahub/datahub-gms
+       destination: /datahub/datahub-gms
      - from: prepare
        source: /datahub/datahub-upgrade
        destination: /datahub/datahub-upgrade
