@@ -9,10 +9,10 @@ runs:
     METADATA_CHANGE_EVENT_NAME: MetadataChangeEvent_v4
     FAILED_METADATA_CHANGE_EVENT_NAME: FailedMetadataChangeEvent_v4
     DATAHUB_USAGE_EVENT_NAME: DataHubUsageEvent_v1
-    METADATA_CHANGE_LOG_VERSIONED_TOPIC: MetadataChangeLog_Versioned_v1
-    METADATA_CHANGE_LOG_TIMESERIES_TOPIC: MetadataChangeLog_Timeseries_v1
-    METADATA_CHANGE_PROPOSAL_TOPIC: MetadataChangeProposal_v1
-    FAILED_METADATA_CHANGE_PROPOSAL_TOPIC: FailedMetadataChangeProposal_v1
+    METADATA_CHANGE_LOG_VERSIONED_TOPIC_NAME: MetadataChangeLog_Versioned_v1
+    METADATA_CHANGE_LOG_TIMESERIES_TOPIC_NAME: MetadataChangeLog_Timeseries_v1
+    METADATA_CHANGE_PROPOSAL_TOPIC_NAME: MetadataChangeProposal_v1
+    FAILED_METADATA_CHANGE_PROPOSAL_TOPIC_NAME: FailedMetadataChangeProposal_v1
     PLATFORM_EVENT_TOPIC_NAME: PlatformEvent_v1
 
 variants:
@@ -29,6 +29,12 @@ variants:
       - from: local
         source: ./docker/kafka-setup/kafka-setup.sh
         destination: ./kafka-setup.sh
+      - from: local
+        source: ./docker/kafka-setup/kafka-config.sh
+        destination: ./kafka-config.sh
+      - from: local
+        source: ./docker/kafka-setup/kafka-topic-workers.sh
+        destination: ./kafka-topic-workers.sh
       - from: local
         source: ./docker/kafka-setup/setup_kafka_setup.sh
         destination: ./setup_kafka_setup.sh
