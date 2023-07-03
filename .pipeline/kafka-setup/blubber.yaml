@@ -53,12 +53,13 @@ variants:
   shell:
     builders:
       - custom:
-          command: [ 'cp', '/home/runuser/.bashrc', '/tmp/.bashrc']
+          command: [ '/bin/sh', '-c', 'echo "#!/bin/bash\n/usr/bin/kafka-topics \"\044@\"" > /tmp/kafka-topics.sh']
       - custom:
-          command: [ 'sed', '-i', '$ aalias kafka-topics.sh=/usr/bin/kafka-topics', '/tmp/.bashrc']
+          command: [ '/bin/sh', '-c', 'echo "#!/bin/bash\n/usr/bin/kafka-configs \"\044@\"" > /tmp/kafka-configs.sh']
       - custom:
-          command: [ 'sed', '-i', '$ aalias kafka-config.sh=/usr/bin/kafka-config', '/tmp/.bashrc']
-  
+          command: [ 'chmod', '+x', '/tmp/kafka-topics.sh']
+      - custom:
+          command: [ 'chmod', '+x', '/tmp/kafka-configs.sh']  
   production:
     apt:
       sources:
@@ -86,10 +87,14 @@ variants:
         source: /var/tmp/lib/python3.9
         destination: /usr/local/lib/python3.9
       - from : shell
-        source: /tmp/.bashrc
-        destination: /home/runuser/.bashrc
+        source: /tmp/kafka-topics.sh
+        destination: /usr/local/bin/kafka-topics.sh
+      - from : shell
+        source: /tmp/kafka-configs.sh
+        destination: /usr/local/bin/kafka-configs.sh
     runs:
       environment:
+        PATH: /datahub:$PATH
         PYTHONPATH: /usr/local/lib/python3.9/site-packages
         METADATA_AUDIT_EVENT_NAME: MetadataAuditEvent_v4
         METADATA_CHANGE_EVENT_NAME: MetadataChangeEvent_v4
