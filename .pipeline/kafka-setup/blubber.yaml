@@ -44,7 +44,7 @@ variants:
             - "/confluent-data-utils"
       - custom:
           command: [ 'pip', 'install', '--prefer-binary', '--prefix', '/var/tmp', '--upgrade', '/confluent-data-utils' ]
-  
+
   dockerize:
     base: docker-registry.wikimedia.org/golang1.19:1.19-1-20230625
     builder:
@@ -59,14 +59,14 @@ variants:
       - custom:
           command: [ 'chmod', '+x', '/tmp/kafka-topics.sh']
       - custom:
-          command: [ 'chmod', '+x', '/tmp/kafka-configs.sh']  
+          command: [ 'chmod', '+x', '/tmp/kafka-configs.sh']
   production:
     apt:
       sources:
         - url: http://apt.wikimedia.org/wikimedia
           distribution: bullseye-wikimedia
-          components: [main, thirdparty/confluent]
-      packages: [ wmf-certificates, confluent-kafka-2.11, python3-pip ]  
+          components: [main, thirdparty/confluent7]
+      packages: [ wmf-certificates, confluent-kafka, python3-pip ]
     copies:
       - from: datahub-source
         source: /datahub/docker/kafka-setup/kafka-setup.sh
@@ -105,4 +105,4 @@ variants:
         METADATA_CHANGE_PROPOSAL_TOPIC_NAME: MetadataChangeProposal_v1
         FAILED_METADATA_CHANGE_PROPOSAL_TOPIC_NAME: FailedMetadataChangeProposal_v1
         PLATFORM_EVENT_TOPIC_NAME: PlatformEvent_v1
-    entrypoint: [ '/datahub/kafka-setup.sh']    
+    entrypoint: [ '/datahub/kafka-setup.sh']
