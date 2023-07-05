@@ -1,32 +1,55 @@
+# syntax=docker-registry.wikimedia.org/repos/releng/blubber:v0.17.0
 version: v4
 base: docker-registry.wikimedia.org/bullseye
 lives:
   in: /datahub
 
 variants:
-  build:
-    apt: { packages: [ ca-certificates, curl, jq ] }
+  datahub-source:
+    lives:
+      in: /datahub
+    base: docker-registry.wikimedia.org/bullseye:latest
+    apt:
+      packages: [ 'git', 'ca-certificates' ]
+    builders:
+      - custom:
+          command:
+            - git
+            - clone
+            - '--branch'
+            - 'v0.10.4'
+            - '--single-branch'
+            - "https://github.com/datahub-project/datahub.git"
+            - "/datahub"
+      - custom:
+          command:
+            - chmod
+            - +x
+            - /datahub/docker/elasticsearch-setup/create-indices.sh
+
+  dockerize:
+    base: docker-registry.wikimedia.org/golang1.19:1.19-1-20230625
     builder:
-      command: ['/bin/bash', '/datahub/setup_elasticsearch_setup.sh']
-      requirements:
-      - from: local
-        source: ./docker/elasticsearch-setup/create-indices.sh
-        destination: ./create-indices.sh
-      - from: local
-        source: metadata-service/restli-servlet-impl/src/main/resources/index
-        destination: ./index
-      - from: local
-        source: ./docker/elasticsearch-setup/setup_elasticsearch_setup.sh
-        destination: ./setup_elasticsearch_setup.sh
+      command: [ 'go', 'install', 'github.com/jwilder/dockerize@v0.6.1']
+
   production:
     apt:
       sources:
         - url: http://apt.wikimedia.org/wikimedia
-          distribution: buster-wikimedia
+          distribution: bullseye-wikimedia
           components: [main]
       packages: [ wmf-certificates, curl, jq ]
     copies:
-    - from: build
-      source: /datahub
-      destination: /datahub
-    entrypoint: [ '/datahub/create-indices.sh' ]
+    - from: datahub-source
+      source: /datahub/docker/elasticsearch-setup/create-indices.sh
+      destination: /datahub/create-indices.sh
+    - from: datahub-source
+      source: /datahub/metadata-service/restli-servlet-impl/src/main/resources/index
+      destination: /datahub/index
+    - from: dockerize
+      source: /go/bin/dockerize
+      destination: /usr/local/bin
+    entrypoint:
+      - /bin/bash
+      - -c
+      - 'if [ "$ELASTICSEARCH_USE_SSL" == "true" ]; then ELASTICSEARCH_PROTOCOL=https; else ELASTICSEARCH_PROTOCOL=http; fi && if [[ -n "$ELASTICSEARCH_USERNAME" ]]; then ELASTICSEARCH_HTTP_HEADERS="Authorization: Basic $(echo -ne "$ELASTICSEARCH_USERNAME:$ELASTICSEARCH_PASSWORD" | base64)"; else ELASTICSEARCH_HTTP_HEADERS="Accept: */*"; fi && if [[ "$SKIP_ELASTICSEARCH_CHECK" != "true" ]]; then dockerize -wait $ELASTICSEARCH_PROTOCOL://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT -wait-http-header "${ELASTICSEARCH_HTTP_HEADERS}" -timeout 120s /create-indices.sh; else /create-indices.sh; fi'

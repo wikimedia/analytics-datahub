@@ -6,42 +6,78 @@ lives:
   in: /datahub/datahub-mce-consumer
 
 variants:
+  datahub-source:
+    lives:
+      in: /datahub
+    base: docker-registry.wikimedia.org/bullseye:latest
+    apt:
+      packages: [ 'git', 'ca-certificates' ]
+    builders:
+      - custom:
+          command:
+            - git
+            - clone
+            - '--branch'
+            - 'v0.10.4'
+            - '--single-branch'
+            - "https://github.com/datahub-project/datahub.git"
+            - "/datahub"
+      - custom:
+          command:
+            - chmod
+            - +x
+            - /datahub/docker/datahub-mce-consumer/start.sh
+
+  dockerize:
+    base: docker-registry.wikimedia.org/golang1.19:1.19-1-20230625
+    builder:
+      command: [ 'go', 'install', 'github.com/jwilder/dockerize@v0.6.1']
+
   build:
     lives:
-      in: /datahub/src
+      in: /datahub
     builder:
       command: ['./gradlew', ':metadata-jobs:mce-consumer-job:build']
       requirements:
-       - from: local
-         source: .
-         destination: .
+       - from: datahub-source
+         source: /datahub
+         destination: /datahub
+  
   prepare:
-    copies:
-     - from: build
-       source: /datahub/src/metadata-jobs/mce-consumer-job/build/libs/mce-consumer-job.jar
-       destination: /datahub/datahub-mce-consumer/mce-consumer-job.jar
-     - from: build
-       source: /datahub/src/docker/monitoring/client-prometheus-config.yaml
-       destination: /datahub/datahub-mce-consumer/scripts/prometheus-config.yaml
-    apt: { packages: [curl] }
-    builder:
-      command: ['/bin/bash', '/datahub/datahub-mce-consumer/setup_mce_consumer.sh']
-      requirements:
-      - from: build
-        source: /datahub/src/docker/datahub-mce-consumer/setup_mce_consumer.sh
-        destination: /datahub/datahub-mce-consumer/setup_mce_consumer.sh
-      - from: build
-        source: /datahub/src/docker/datahub-mce-consumer/start.sh
-        destination: /datahub/datahub-mce-consumer/scripts/start.sh
+    apt: { packages: [wget] }
+    builders:
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.24.0/opentelemetry-javaagent.jar', '-O', '/tmp/opentelemetry-javaagent.jar']
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.18.0/jmx_prometheus_javaagent-0.18.0.jar', '-O', '/tmp/jmx_prometheus_javaagent.jar']
+
   production:
     apt:
       sources:
         - url: http://apt.wikimedia.org/wikimedia
-          distribution: buster-wikimedia
+          distribution: bullseye-wikimedia
           components: [main]
       packages: [ wmf-certificates ]
     copies:
-     - from: prepare
-       source: /datahub/datahub-mce-consumer
-       destination: /datahub/datahub-mce-consumer
+      - from: build
+        source: /datahub/metadata-jobs/mce-consumer-job/build/libs/mce-consumer-job.jar
+        destination: /datahub/datahub-mce-consumer
+      - from: datahub-source
+        source: /datahub/metadata-models/src/main/resources/entity-registry.yml
+        destination: /datahub/datahub-mce-consumer/resources/entity-registry.yml
+      - from: datahub-source
+        source: /datahub/docker/datahub-mce-consumer/start.sh
+        destination: /datahub/datahub-mce-consumer/scripts/start.sh
+      - from: datahub-source
+        source: /datahub/docker/monitoring/client-prometheus-config.yaml
+        destination: /datahub/datahub-mce-consumer/scripts/prometheus-config.yaml
+      - from: dockerize
+        source: /go/bin/dockerize
+        destination: /usr/local/bin
+      - from: prepare
+        source: /tmp/opentelemetry-javaagent.jar
+        destination: /
+      - from: prepare
+        source: /tmp/jmx_prometheus_javaagent.jar
+        destination: /
     entrypoint: ['/datahub/datahub-mce-consumer/scripts/start.sh']

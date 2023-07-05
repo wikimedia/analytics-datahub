@@ -15,22 +15,19 @@ export DOCKER_BUILDKIT=1
 echo '#### Cleaning build cache ####'
 docker builder prune -f
 
-for c in gms frontend mce-consumer mae-consumer upgrade
+# Find all subdirectories of the .pipeline directory that contain a blubber config file
+for c in $(find .pipeline/ -name blubber.yaml | awk -F '/' '{print $2}')
 do
   echo "#### Working on $c ####"
-  for i in build prepare production
+  echo "#### Removing containters for $c ####"
+  for d in $(docker ps -aq --filter="ancestor=datahub-$c-production")
   do
-    echo "#### Removing containters for $c-$i ####"
-    for d in $(docker ps -aq --filter="ancestor=datahub-$c-$i")
-    do
-      docker rm -f $d || /usr/bin/true
-    done
-
-    if docker image ls -q datahub-$c-$d; then
-      echo "#### Removing container image for $c-$i ####"
-      docker rmi datahub-$c-$i || /usr/bin/true
-    fi
-    echo "#### Building container image for $c-$i ####"
-    docker build -t datahub-$c-$i -f .pipeline/$c/blubber.yaml --target $i .
+    docker rm -f $d || /usr/bin/true
   done
+  if docker image ls -q datahub-$c-$d; then
+    echo "#### Removing container image for $c-production ####"
+    docker rmi datahub-$c-production || /usr/bin/true
+  fi
+  echo "#### Building container image for $c-production ####"
+  docker build -t datahub-$c-production -f .pipeline/$c/blubber.yaml --target production .
 done

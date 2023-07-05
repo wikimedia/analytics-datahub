@@ -3,51 +3,87 @@ version: v4
 base: docker-registry.wikimedia.org/openjdk-11-jdk
 
 lives:
-  in: /datahub/datahub-frontend
+  in: /datahub-frontend
 
 variants:
-  build-react:
+  datahub-source:
     lives:
-      in: /datahub/src
-    apt: { packages: [python3] }
-    builder:
-      command: ['./gradlew', ':datahub-web-react:build', '-PuseSystemNode=false', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
-      requirements:
-        - from: local
-          source: .
-          destination: .
-  build-frontend:
+      in: /datahub
+    base: docker-registry.wikimedia.org/bullseye:latest
+    apt:
+      packages: [ 'git', 'ca-certificates' ]
+    builders:
+      - custom:
+          command:
+            - git
+            - clone
+            - '--branch'
+            - 'v0.10.4'
+            - '--single-branch'
+            - "https://github.com/datahub-project/datahub.git"
+            - "/datahub"
+      - custom:
+          command:
+            - chmod
+            - +x
+            - /datahub/docker/datahub-frontend/start.sh
+  build:
     lives:
-      in: /datahub/src
+      in: /datahub
     apt: { packages: [python3] }
     builder:
       command: ['./gradlew', ':datahub-frontend:dist', '-PuseSystemNode=false', '-x', 'test', '-x', 'yarnTest', '-x', 'yarnLint']
       requirements:
-       - from: build-react
-         source: /datahub/src/
-         destination: /datahub/src/
-  build:
-    includes: [ 'build-frontend' ]
-  prepare:
-    apt: { packages: [unzip] }
+        - from: datahub-source
+          source: /datahub
+          destination: /datahub
+
+  extract:
     lives:
-      in: /datahub
+      in: /datahub-frontend
+    apt: { packages: [unzip] }
     builder:
-      command: ['unzip', 'datahub-frontend.zip']
+      command: ['unzip', '/tmp/datahub-frontend.zip', '-d', '/datahub-frontend']
       requirements:
-      - from: build-frontend
-        source: /datahub/src/datahub-frontend/build/distributions/datahub-frontend-*.zip
-        destination: /datahub/datahub-frontend.zip
+        - from: build
+          source: /datahub/datahub-frontend/build/distributions/datahub-frontend-*.zip
+          destination: /tmp/datahub-frontend.zip
+
+  prepare:
+    apt: { packages: [unzip, wget] }
+    lives:
+      in: /datahub-frontend
+    builders:
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.24.0/opentelemetry-javaagent.jar', '-O', '/tmp/opentelemetry-javaagent.jar']
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.18.0/jmx_prometheus_javaagent-0.18.0.jar', '-O', '/tmp/jmx_prometheus_javaagent.jar']
+ 
   production:
+    runs:
+      environment:
+        SERVER_PORT: '9002'
     apt:
       sources:
         - url: http://apt.wikimedia.org/wikimedia
-          distribution: buster-wikimedia
+          distribution: bullseye-wikimedia
           components: [main]
       packages: [ wmf-certificates ]
     copies:
-     - from: prepare
-       source: /datahub/datahub-frontend
-       destination: /datahub/datahub-frontend
-    entrypoint: ['/datahub/datahub-frontend/bin/datahub-frontend']
+      - from: extract
+        source: /datahub-frontend
+        destination: /datahub-frontend
+      - from: build
+        source: /datahub/docker/datahub-frontend/start.sh
+        destination: /
+      - from: build
+        source: /datahub/docker/monitoring/client-prometheus-config.yaml
+        destination: /datahub-frontend
+      - from: prepare
+        source: /tmp/opentelemetry-javaagent.jar
+        destination: /
+      - from: prepare
+        source: /tmp/jmx_prometheus_javaagent.jar
+        destination: /
+    entrypoint: ['/start.sh']
 

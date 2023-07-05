@@ -8,29 +8,51 @@ runs:
     DATAHUB_DB_NAME: datahub
 
 variants:
-  build:
-    apt: { packages: [ mariadb-client, curl, ca-certificates ] }
+  datahub-source:
+    lives:
+      in: /datahub
+    base: docker-registry.wikimedia.org/bullseye:latest
+    apt:
+      packages: [ 'git', 'ca-certificates' ]
+    builders:
+      - custom:
+          command:
+            - git
+            - clone
+            - '--branch'
+            - 'v0.10.4'
+            - '--single-branch'
+            - "https://github.com/datahub-project/datahub.git"
+            - "/datahub"
+      - custom:
+          command:
+            - chmod
+            - +x
+            - /datahub/docker/mysql-setup/init.sh
+
+  dockerize:
+    base: docker-registry.wikimedia.org/golang1.19:1.19-1-20230625
     builder:
-      command: ['/bin/bash', '/datahub/setup_mysql_setup.sh']
-      requirements:
-      - from: local
-        source: ./docker/mysql-setup/init.sql
-        destination: ./init.sql
-      - from: local
-        source: ./docker/mysql-setup/init.sh
-        destination: ./init.sh
-      - from: local
-        source: ./docker/mysql-setup/setup_mysql_setup.sh
-        destination: ./setup_mysql_setup.sh
+      command: [ 'go', 'install', 'github.com/jwilder/dockerize@v0.6.1']
+
   production:
     apt:
       sources:
         - url: http://apt.wikimedia.org/wikimedia
-          distribution: buster-wikimedia
+          distribution: bullseye-wikimedia
           components: [main]
       packages: [ wmf-certificates, mariadb-client ]
     copies:
-    - from: build
-      source: /datahub
-      destination: /datahub
-    entrypoint: [ '/datahub/init.sh' ]
+    - from: datahub-source
+      source: /datahub/docker/mysql-setup/init.sql
+      destination: /init.sql
+    - from: datahub-source
+      source: /datahub/docker/mysql-setup/init.sh
+      destination: /init.sh
+    - from: dockerize
+      source: /go/bin/dockerize
+      destination: /usr/local/bin
+    entrypoint:
+     - /bin/bash
+     - -c
+     - dockerize -wait tcp://$MYSQL_HOST:$MYSQL_PORT -timeout 240s /init.sh

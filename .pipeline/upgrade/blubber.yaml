@@ -6,26 +6,54 @@ lives:
   in: /datahub/datahub-upgrade
 
 variants:
+  datahub-source:
+    lives:
+      in: /datahub
+    base: docker-registry.wikimedia.org/bullseye:latest
+    apt:
+      packages: [ 'git', 'ca-certificates' ]
+    builders:
+      - custom:
+          command:
+            - git
+            - clone
+            - '--branch'
+            - 'v0.10.4'
+            - '--single-branch'
+            - "https://github.com/datahub-project/datahub.git"
+            - "/datahub"
+
+  dockerize:
+    base: docker-registry.wikimedia.org/golang1.19:1.19-1-20230625
+    builders:
+      - custom:
+          command: [ 'go', 'install', 'github.com/jwilder/dockerize@v0.6.1']
+
   build:
     lives:
-      in: /datahub/src
+      in: /datahub
     apt: { packages: [python3] }
     builder:
       command: ['./gradlew', ':datahub-upgrade:build', '-PuseSystemNode=false', '-x', 'test', '--parallel']
       requirements:
-        - from: local
-          source: .
-          destination: .
+        - from: datahub-source
+          source: /datahub
+          destination: /datahub
+
   prepare:
-    lives:
-      in: /datahub
-    copies:
-      - from: build
-        source: /datahub/src/metadata-models/src/main/resources/entity-registry.yml
-        destination: /datahub/datahub-gms/resources/entity-registry.yml
-      - from: build
-        source: /datahub/src/datahub-upgrade/build/libs/datahub-upgrade.jar
-        destination: /datahub/datahub-upgrade/bin/datahub-upgrade.jar
+    apt: { packages: [ curl, wget ] }
+    builders:
+      - custom:
+          command: [ 'curl', '-sS', 'https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-runner/9.4.46.v20220331/jetty-runner-9.4.46.v20220331.jar', '--output', '/tmp/jetty-runner.jar']
+      - custom:
+          command: [ 'curl', '-sS', 'https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-jmx/9.4.46.v20220331/jetty-jmx-9.4.46.v20220331.jar', '--output', '/tmp/jetty-jmx.jar']
+      - custom:
+          command: [ 'curl', '-sS', 'https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-util/9.4.46.v20220331/jetty-util-9.4.46.v20220331.jar', '--output', '/tmp/jetty-util.jar']
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.24.0/opentelemetry-javaagent.jar', '-O', '/tmp/opentelemetry-javaagent.jar']
+      - custom:
+          command: [ 'wget', '--no-verbose' ,'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.18.0/jmx_prometheus_javaagent-0.18.0.jar', '-O', '/tmp/jmx_prometheus_javaagent.jar']
+
   production:
     apt:
       sources:
@@ -34,11 +62,28 @@ variants:
           components: [main]
       packages: [ wmf-certificates ]
     copies:
-     - from: prepare
-       source: /datahub/datahub-gms
-       destination: /datahub/datahub-gms
-     - from: prepare
-       source: /datahub/datahub-upgrade
-       destination: /datahub/datahub-upgrade
+      - from: datahub-source
+        source: /datahub/metadata-models/src/main/resources/entity-registry.yml
+        destination: /datahub/datahub-gms/resources/entity-registry.yml
+      - from: build
+        source: /datahub/datahub-upgrade/build/libs/datahub-upgrade.jar
+        destination: /datahub/datahub-upgrade/bin/datahub-upgrade.jar
+      - from: prepare
+        source: /tmp/jetty-runner.jar
+        destination: /
+      - from: prepare
+        source: /tmp/jetty-jmx.jar
+        destination: /
+      - from: prepare
+        source: /tmp/jetty-util.jar
+        destination: /
+      - from: prepare
+        source: /tmp/opentelemetry-javaagent.jar
+        destination: /
+      - from: prepare
+        source: /tmp/jmx_prometheus_javaagent.jar
+        destination: /
+      - from: dockerize
+        source: /go/bin/dockerize
+        destination: /usr/local/bin
     entrypoint: ['java', '-jar', '/datahub/datahub-upgrade/bin/datahub-upgrade.jar']
-

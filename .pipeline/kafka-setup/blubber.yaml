@@ -15,7 +15,7 @@ variants:
             - git
             - clone
             - '--branch'
-            - 'v0.10.0'
+            - 'v0.10.4'
             - '--single-branch'
             - "https://github.com/datahub-project/datahub.git"
             - "/datahub"
