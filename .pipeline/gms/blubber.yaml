@@ -105,4 +105,4 @@ variants:
       - from: dockerize
         source: /go/bin/dockerize
         destination: /usr/local/bin
-    entrypoint: ['/datahub/datahub-gms/scripts/start.sh']
+    entrypoint: ['/bin/sh', '-c', 'cd / && /datahub/datahub-gms/scripts/start.sh']
