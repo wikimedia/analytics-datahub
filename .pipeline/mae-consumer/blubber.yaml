@@ -61,7 +61,7 @@ variants:
     copies:
       - from: build
         source: /datahub/metadata-jobs/mae-consumer-job/build/libs/mae-consumer-job.jar
-        destination: /datahub/datahub-mae-consumer
+        destination: /datahub/datahub-mae-consumer/bin/mae-consumer-job.jar
       - from: datahub-source
         source: /datahub/metadata-models/src/main/resources/entity-registry.yml
         destination: /datahub/datahub-mae-consumer/resources/entity-registry.yml
