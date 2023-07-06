@@ -40,19 +40,19 @@ variants:
 
   extract:
     lives:
-      in: /datahub-frontend
+      in: /datahub
     apt: { packages: [unzip] }
     builder:
-      command: ['unzip', '/tmp/datahub-frontend.zip', '-d', '/datahub-frontend']
+      command: ['unzip', 'datahub-frontend.zip']
       requirements:
         - from: build
           source: /datahub/datahub-frontend/build/distributions/datahub-frontend-*.zip
-          destination: /tmp/datahub-frontend.zip
+          destination: /datahub/datahub-frontend.zip
 
   prepare:
     apt: { packages: [unzip, wget] }
     lives:
-      in: /datahub-frontend
+      in: /datahub
     builders:
       - custom:
           command: [ 'wget', '--no-verbose' ,'https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.24.0/opentelemetry-javaagent.jar', '-O', '/tmp/opentelemetry-javaagent.jar']
@@ -71,7 +71,7 @@ variants:
       packages: [ wmf-certificates ]
     copies:
       - from: extract
-        source: /datahub-frontend
+        source: /datahub/datahub-frontend
         destination: /datahub-frontend
       - from: build
         source: /datahub/docker/datahub-frontend/start.sh
@@ -85,5 +85,5 @@ variants:
       - from: prepare
         source: /tmp/jmx_prometheus_javaagent.jar
         destination: /
-    entrypoint: ['/start.sh']
+    entrypoint: [ '/bin/sh', '-c', 'cd / && /start.sh']
 
