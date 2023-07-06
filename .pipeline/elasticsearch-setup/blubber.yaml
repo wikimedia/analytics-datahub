@@ -42,10 +42,10 @@ variants:
     copies:
     - from: datahub-source
       source: /datahub/docker/elasticsearch-setup/create-indices.sh
-      destination: /datahub/create-indices.sh
+      destination: /
     - from: datahub-source
       source: /datahub/metadata-service/restli-servlet-impl/src/main/resources/index
-      destination: /datahub/index
+      destination: /index
     - from: dockerize
       source: /go/bin/dockerize
       destination: /usr/local/bin
