@@ -80,5 +80,5 @@ variants:
       - from: prepare
         source: /tmp/jmx_prometheus_javaagent.jar
         destination: /
-    entrypoint: ['/datahub/datahub-mae-consumer/scripts/start.sh']
+    entrypoint: ['/bin/sh', '-c', 'cd / && /datahub/datahub-mae-consumer/scripts/start.sh']
 
